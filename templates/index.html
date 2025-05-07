@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Code Readability Predictor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 text-gray-800">
+    <div class="flex items-center justify-center min-h-screen">
+        <div class="bg-white rounded-lg shadow-lg p-10 w-full max-w-2xl text-center">
+            <h1 class="text-2xl font-semibold mb-6">Code Readability Predictor</h1>
+            <form action="/analyze" method="post" enctype="multipart/form-data" class="space-y-4">
+                <input type="file" name="codefile" accept=".java" required class="block w-full text-sm border rounded p-2" />
+                <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Analyze</button>
+            </form>
+
+            {% if result %}
+                <div class="mt-8 text-left">
+                    <p class="text-gray-700 text-sm mb-1"><strong>📂 File:</strong> {{ file }}</p>
+                    {% if result == 'readable' %}
+                        <p class="text-green-600 font-semibold">🧠 Readability: {{ result }}</p>
+                    {% else %}
+                        <p class="text-red-600 font-semibold">🧠 Readability: {{ result }}</p>
+                    {% endif %}
+                    <p class="text-gray-700"><strong>📊 Confidence:</strong> {{ confidence }}</p>
+                    <p class="text-gray-700"><strong>⏱️ Time Complexity:</strong> {{ time }}</p>
+                    <p class="text-gray-700"><strong>📦 Space Complexity:</strong> {{ space }}</p>
+
+                    <div class="mt-6">
+                        <h2 class="text-lg font-semibold mb-2">📄 Uploaded Code:</h2>
+                        <pre class="bg-gray-100 text-sm text-left p-4 rounded overflow-auto max-h-80 border">
+<code>{{ code }}</code></pre>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>
