@@ -6,6 +6,8 @@ import tensorflow as tf
 import numpy as np
 import joblib
 import json
+from bug_analyzer import analyze_bugs
+import javalang
 
 app = FastAPI()
 
@@ -31,16 +33,43 @@ def predict_readability(code):
 
 # Time and space complexity estimation
 def estimate_complexity(code):
-    time_complexity = "O(1)"
-    space_complexity = "O(1)"
+    try:
+        # Wrap in a dummy class if needed
+        if "class" not in code:
+            code = f"public class DummyWrapper {{ {code} }}"
+        tree = javalang.parse.parse(code)
+    except javalang.parser.JavaSyntaxError:
+        return "Unknown", "Unknown"
 
-    loop_count = code.count("for") + code.count("while")
-    if loop_count >= 2:
+    max_depth = 0
+
+    def walk(node, depth=0):
+        nonlocal max_depth
+        if isinstance(node, (javalang.tree.ForStatement, javalang.tree.WhileStatement,
+                             javalang.tree.DoStatement)):
+            depth += 1
+            max_depth = max(max_depth, depth)
+
+        for child in node.children:
+            if isinstance(child, list):
+                for item in child:
+                    if isinstance(item, javalang.tree.Node):
+                        walk(item, depth)
+            elif isinstance(child, javalang.tree.Node):
+                walk(child, depth)
+
+    walk(tree)
+
+    if max_depth >= 2:
         time_complexity = "O(n^2)"
-    elif loop_count == 1:
+    elif max_depth == 1:
         time_complexity = "O(n)"
+    else:
+        time_complexity = "O(1)"
 
-    if "new" in code or "[" in code or "]" in code:
+    # Space complexity guess: look for array or collection declarations
+    space_complexity = "O(1)"
+    if any(kw in code for kw in ["new int[", "ArrayList", "HashMap", "[", "]"]):
         space_complexity = "O(n)"
 
     return time_complexity, space_complexity
@@ -54,16 +83,17 @@ async def analyze_file(request: Request, codefile: UploadFile = File(...)):
     if not codefile.filename.endswith(".java"):
         return templates.TemplateResponse("index.html", {
             "request": request,
-            "result": "❌ Only .java files are supported.",
+            "result": "❌ File must be a .java file",
             "confidence": "N/A",
             "file": codefile.filename,
             "time": "-",
             "space": "-",
-            "code": "(file type not supported)"
+            "code": "(not displayed)",
+            "bugs": []
         })
 
-    content = await codefile.read()
     try:
+        content = await codefile.read()
         code = content.decode("utf-8")
     except UnicodeDecodeError:
         return templates.TemplateResponse("index.html", {
@@ -73,11 +103,14 @@ async def analyze_file(request: Request, codefile: UploadFile = File(...)):
             "file": codefile.filename,
             "time": "-",
             "space": "-",
-            "code": "(could not decode file)"
+            "code": "(could not decode file)",
+            "bugs": []
         })
 
+    # Prediction
     label, conf = predict_readability(code)
     time_complexity, space_complexity = estimate_complexity(code)
+    bug_result = analyze_bugs(code)
 
     return templates.TemplateResponse("index.html", {
         "request": request,
@@ -86,5 +119,7 @@ async def analyze_file(request: Request, codefile: UploadFile = File(...)):
         "file": codefile.filename,
         "time": time_complexity,
         "space": space_complexity,
-        "code": code
+        "code": code,
+        "bugs": bug_result['errors']
     })
+

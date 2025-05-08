@@ -2,36 +2,62 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Code Readability Predictor</title>
+    <title>Code Readability & Bug Analyzer</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-100 text-gray-800">
     <div class="flex items-center justify-center min-h-screen">
         <div class="bg-white rounded-lg shadow-lg p-10 w-full max-w-2xl text-center">
-            <h1 class="text-2xl font-semibold mb-6">Code Readability Predictor</h1>
+            <h1 class="text-2xl font-semibold mb-6">Code Readability & Bug Analyzer</h1>
+
             <form action="/analyze" method="post" enctype="multipart/form-data" class="space-y-4">
                 <input type="file" name="codefile" accept=".java" required class="block w-full text-sm border rounded p-2" />
                 <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Analyze</button>
             </form>
 
             {% if result %}
-                <div class="mt-8 text-left">
-                    <p class="text-gray-700 text-sm mb-1"><strong>📂 File:</strong> {{ file }}</p>
-                    {% if result == 'readable' %}
-                        <p class="text-green-600 font-semibold">🧠 Readability: {{ result }}</p>
-                    {% else %}
-                        <p class="text-red-600 font-semibold">🧠 Readability: {{ result }}</p>
-                    {% endif %}
-                    <p class="text-gray-700"><strong>📊 Confidence:</strong> {{ confidence }}</p>
-                    <p class="text-gray-700"><strong>⏱️ Time Complexity:</strong> {{ time }}</p>
-                    <p class="text-gray-700"><strong>📦 Space Complexity:</strong> {{ space }}</p>
+            <div class="mt-8 text-left">
+                <p class="text-gray-700 text-sm"><strong>📂 File:</strong> {{ file }}</p>
 
-                    <div class="mt-6">
-                        <h2 class="text-lg font-semibold mb-2">📄 Uploaded Code:</h2>
-                        <pre class="bg-gray-100 text-sm text-left p-4 rounded overflow-auto max-h-80 border">
-<code>{{ code }}</code></pre>
-                    </div>
+                {% if result == 'readable' %}
+                    <p class="text-green-600 font-semibold">🧠 Readability: {{ result }}</p>
+                {% else %}
+                    <p class="text-red-600 font-semibold">🧠 Readability: {{ result }}</p>
+                {% endif %}
+
+                <p class="text-gray-700"><strong>📊 Confidence:</strong> {{ confidence }}</p>
+                <p class="text-gray-700"><strong>⏱️ Time Complexity:</strong> {{ time }}</p>
+                <p class="text-gray-700"><strong>📦 Space Complexity:</strong> {{ space }}</p>
+
+                <p class="mt-4 font-semibold text-gray-800">📄 Code Preview:</p>
+                <pre class="bg-gray-100 p-3 text-sm overflow-x-auto border rounded whitespace-pre-wrap">{{ code }}</pre>
+
+                {% if bugs and bugs|length > 0 %}
+                <div class="mt-6 text-left">
+                    <h3 class="font-semibold text-lg mb-2">🐛 Bug Localization Results</h3>
+                    <table class="w-full text-sm border">
+                        <thead class="bg-gray-200">
+                            <tr>
+                                <th class="p-2 border">Line</th>
+                                <th class="p-2 border">Error Message</th>
+                                <th class="p-2 border">Suggestion</th>
+                                <th class="p-2 border">Explanation</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for bug in bugs %}
+                            <tr class="border-t">
+                                <td class="p-2 border text-center">{{ bug.line }}</td>
+                                <td class="p-2 border text-red-600">{{ bug.message }}</td>
+                                <td class="p-2 border text-green-700">{{ bug.suggestion }}</td>
+                                <td class="p-2 border text-gray-700 italic">{{ bug.explanation }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
+                {% endif %}
+            </div>
             {% endif %}
         </div>
     </div>
