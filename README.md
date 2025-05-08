@@ -19,8 +19,8 @@ A FastAPI web app to analyze Java code readability, time/space complexity, and l
 ## 🛠️ Setup
 
 ```bash
-git clone https://github.com/yourusername/code-readability-analyzer.git
-cd code-readability-analyzer
+git clone https://github.com/Johnmark2509/CodeReadability.git
+cd CodeReadability
 python -m venv venv
 venv\Scripts\activate  # or source venv/bin/activate on Linux/Mac
 pip install -r requirements.txt
